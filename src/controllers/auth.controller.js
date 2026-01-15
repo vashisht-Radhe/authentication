@@ -1,5 +1,7 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { JWT_EXPIRE_IN, JWT_SECRET } from "../config/env.js";
 
 const SALT = 10;
 
@@ -23,12 +25,19 @@ export const register = async (req, res, next) => {
       password: hashedPassword,
     });
 
+    const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRE_IN,
+    });
+
     user.password = undefined;
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
-      data: user,
+      data: {
+        token: token,
+        user: user,
+      },
     });
   } catch (error) {
     next(error);
@@ -46,18 +55,47 @@ export const login = async (req, res, next) => {
       throw error;
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    const isPasswordVaild = await bcrypt.compare(password, user.password);
+    if (!isPasswordVaild) {
       const error = new Error("Invalid email or password");
       error.statusCode = 401;
       throw error;
     }
 
+    const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRE_IN,
+    });
+
     user.password = undefined;
 
     res.status(200).json({
       success: true,
-      message: "User logged in successfully",
+      message: "User signed in successfully",
+      data: {
+        token,
+        user: user,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const me = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error("User does not exist");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    res.status(200).json({
+      message: "User fetched successfully",
+      success: true,
       data: user,
     });
   } catch (error) {
