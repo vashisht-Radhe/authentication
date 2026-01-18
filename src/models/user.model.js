@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { SALT_ROUNDS } from "../config/env.js";
 
+export const ROLES = ["user", "admin"];
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -32,7 +34,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin"],
+      enum: ROLES,
       default: "user",
     },
     isActive: {
@@ -44,7 +46,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.pre("save", async function () {
