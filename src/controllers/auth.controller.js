@@ -85,6 +85,13 @@ export const login = async (req, res, next) => {
       );
     }
 
+    if (!user.isActive && user.deactivatedBy === "admin") {
+      throwError(
+        "Your account has been deactivated by admin. Please contact support.",
+        403,
+      );
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throwError("Invalid email or password", 401);
