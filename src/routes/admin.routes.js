@@ -8,10 +8,11 @@ import {
   deleteUser,
 } from "../controllers/admin.controller.js";
 import { authorize, protect } from "../middlewares/auth.middleware.js";
+import { verified } from "../middlewares/verified.middleware.js";
 
 const adminRoutes = express.Router();
 
-adminRoutes.use(protect, authorize("admin"));
+adminRoutes.use(protect, verified, authorize("admin"));
 
 adminRoutes.get("/", getUsers);
 adminRoutes.get("/:id", getUserById);

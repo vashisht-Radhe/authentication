@@ -8,7 +8,7 @@ import { getUploadPath } from "../utils/uploadPath.js";
 
 export const getMyProfile = async (req, res, next) => {
   try {
-    const { userId } = req.user;
+    const { _id: userId } = req.user;
 
     const user = await User.findById(userId);
 
@@ -28,7 +28,7 @@ export const getMyProfile = async (req, res, next) => {
 
 export const updateMyProfile = async (req, res, next) => {
   try {
-    const { userId } = req.user;
+    const { _id: userId } = req.user;
     const { firstName, lastName } = req.body;
 
     const user = await User.findById(userId);
@@ -56,7 +56,7 @@ export const updateMyProfile = async (req, res, next) => {
 
 export const changePassword = async (req, res, next) => {
   try {
-    const { userId } = req.user;
+    const { _id: userId } = req.user;
     const { currentPassword, newPassword } = req.body;
 
     const user = await User.findById(userId).select("+password");
@@ -105,7 +105,7 @@ export const updateProfilePic = async (req, res, next) => {
 
     uploadedFilePath = getUploadPath(req.file.filename);
 
-    const user = await User.findById(req.user.userId).select("avatar");
+    const user = await User.findById(req.user._id).select("avatar");
     if (!user) {
       throwError("User not found", 404);
     }
@@ -134,7 +134,7 @@ export const updateProfilePic = async (req, res, next) => {
 
 export const deactivateAccount = async (req, res, next) => {
   try {
-    const { userId } = req.user;
+    const { _id: userId } = req.user;
 
     const user = await User.findById(userId);
 
@@ -167,7 +167,7 @@ export const deactivateAccount = async (req, res, next) => {
 
 export const deleteAccount = async (req, res, next) => {
   try {
-    const { userId } = req.user;
+    const { _id: userId } = req.user;
     const { password } = req.body;
 
     if (!password) {

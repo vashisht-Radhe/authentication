@@ -9,14 +9,22 @@ import {
   updateProfilePic,
 } from "../controllers/user.controller.js";
 import { uploadSingle } from "../middlewares/upload.middleware.js";
+import { verified } from "../middlewares/verified.middleware.js";
 
 const userRouter = express.Router();
 
-userRouter.get("/me", protect, getMyProfile);
-userRouter.patch("/me", protect, updateMyProfile);
-userRouter.patch("/change-password", protect, changePassword);
-userRouter.put("/me/avatar", protect, uploadSingle("avatar"), updateProfilePic);
-userRouter.patch("/deactivate", protect, deactivateAccount);
-userRouter.delete("/me", protect, deleteAccount);
+userRouter.use(protect);
+
+userRouter.get("/me", getMyProfile);
+userRouter.patch("/me", verified, updateMyProfile);
+userRouter.patch("/change-password", verified, changePassword);
+userRouter.put(
+  "/me/avatar",
+  verified,
+  uploadSingle("avatar"),
+  updateProfilePic,
+);
+userRouter.patch("/deactivate", verified, deactivateAccount);
+userRouter.delete("/me", verified, deleteAccount);
 
 export default userRouter;

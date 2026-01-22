@@ -55,7 +55,7 @@ export const updateUserRole = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
-    const { userId } = req.user;
+    const { _id: userId } = req.user;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throwError("Invalid user ID", 400);
