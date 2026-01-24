@@ -1,20 +1,22 @@
 import path from "path";
 import fs from "fs";
 import User from "../models/user.model.js";
-import bcrypt from "bcryptjs";
 import { throwError } from "../utils/errorHandler.js";
 import { safeDelete } from "../utils/file.util.js";
 import { getUploadPath } from "../utils/uploadPath.js";
+import {
+  changePasswordService,
+  deactivateAccountService,
+  deleteAccountService,
+  profileService,
+  updateProfileService,
+} from "../services/user.service.js";
 
 export const getMyProfile = async (req, res, next) => {
   try {
-    const { _id: userId } = req.user;
+    const userId = req.user._id;
 
-    const user = await User.findById(userId);
-
-    if (!user || user.isDeleted || !user.isActive) {
-      throwError("Account not accessible", 403);
-    }
+    const user = await profileService(userId);
 
     res.status(200).json({
       message: "Profile retrieved successfully",
@@ -31,18 +33,7 @@ export const updateMyProfile = async (req, res, next) => {
     const { _id: userId } = req.user;
     const { firstName, lastName } = req.body;
 
-    const user = await User.findById(userId);
-
-    if (!user || user.isDeleted || !user.isActive) {
-      throwError("Account not accessible", 403);
-    }
-
-    if (!firstName && !lastName) {
-      throwError("Nothing to update", 400);
-    }
-
-    user.firstName = firstName ?? user.firstName;
-    user.lastName = lastName ?? user.lastName;
+    const user = await updateProfileService({ userId, firstName, lastName });
 
     res.status(200).json({
       success: true,
@@ -59,32 +50,11 @@ export const changePassword = async (req, res, next) => {
     const { _id: userId } = req.user;
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(userId).select("+password");
-
-    if (!user || user.isDeleted || !user.isActive) {
-      throwError("Account not accessible", 403);
-    }
-
-    if (!currentPassword || !newPassword) {
-      throwError("Current password and new password are required", 400);
-    }
-
-    const isPasswordMatch = await bcrypt.compare(
+    await changePasswordService({
+      userId,
       currentPassword,
-      user.password,
-    );
-
-    if (!isPasswordMatch) {
-      throwError("Current password is incorrect", 403);
-    }
-
-    if (currentPassword === newPassword) {
-      throwError("New password must be different", 400);
-    }
-
-    user.password = newPassword;
-
-    await user.save();
+      newPassword,
+    });
 
     res.status(200).json({
       success: true,
@@ -134,30 +104,13 @@ export const updateProfilePic = async (req, res, next) => {
 
 export const deactivateAccount = async (req, res, next) => {
   try {
-    const { _id: userId } = req.user;
+    const userId = req.user._id;
 
-    const user = await User.findById(userId);
-
-    if (!user) {
-      throwError("Unauthorized", 401);
-    }
-
-    if (user.isDeleted) {
-      throwError("Account is deleted", 403);
-    }
-
-    if (!user.isActive) {
-      throwError("Account already deactivated", 403);
-    }
-
-    user.isActive = false;
-    user.deactivatedAt = new Date();
-    user.deactivatedBy = "user";
-
-    await user.save();
+    const deactivatedAt = await deactivateAccountService(userId);
 
     res.status(200).json({
       success: true,
+      deactivatedAt,
       message: "Account deactivated successfully",
     });
   } catch (error) {
@@ -170,26 +123,7 @@ export const deleteAccount = async (req, res, next) => {
     const { _id: userId } = req.user;
     const { password } = req.body;
 
-    if (!password) {
-      throwError("Password is required to delete account", 400);
-    }
-
-    const user = await User.findById(userId).select("+password");
-
-    if (!user || user.isDeleted) {
-      throwError("Account not accessible", 403);
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      throwError("Incorrect Password", 401);
-    }
-
-    user.isDeleted = true;
-    user.deletedAt = new Date();
-    user.isActive = false;
-
-    await user.save();
+    await deleteAccountService({ userId, password });
 
     res.status(200).json({
       success: true,

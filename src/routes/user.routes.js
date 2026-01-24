@@ -15,16 +15,14 @@ const userRouter = express.Router();
 
 userRouter.use(protect);
 
-userRouter.get("/me", getMyProfile);
-userRouter.patch("/me", verified, updateMyProfile);
-userRouter.patch("/change-password", verified, changePassword);
-userRouter.put(
-  "/me/avatar",
-  verified,
-  uploadSingle("avatar"),
-  updateProfilePic,
-);
-userRouter.patch("/deactivate", verified, deactivateAccount);
-userRouter.delete("/me", verified, deleteAccount);
+userRouter.get("/", getMyProfile);
+
+userRouter.use(verified);
+
+userRouter.patch("/", updateMyProfile);
+userRouter.patch("/change-password", changePassword);
+userRouter.patch("/avatar", uploadSingle("avatar"), updateProfilePic);
+userRouter.patch("/deactivate", deactivateAccount);
+userRouter.delete("/", deleteAccount);
 
 export default userRouter;

@@ -39,3 +39,31 @@ export const sendResendOtp = async ({ email, name, otp, expiresText }) => {
     console.error("Resend OTP email failed:", error.message);
   }
 };
+
+export const sendForgetPassword = async ({
+  email,
+  name,
+  resetLink,
+  expiresText,
+}) => {
+  if (!email || !resetLink) {
+    console.warn("Missing email or reset link for forgot password email");
+    return;
+  }
+
+  try {
+    await sendEmail({
+      to: email,
+      ...template.sendForgetPassword({
+        name: name || "there",
+        resetLink,
+        expiresText,
+      }),
+    });
+  } catch (error) {
+    console.error(
+      "Failed to send forgot password email:",
+      error?.message || error,
+    );
+  }
+};

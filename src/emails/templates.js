@@ -59,4 +59,30 @@ export const template = {
       </div>
     `,
   }),
+
+  sendForgetPassword: ({ name, resetLink, expiresText }) => ({
+    subject: "Reset Your Password",
+    html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      
+      <h2>Hello ${name},</h2>
+      <p> We received a request to reset the password for your account.</p>
+      <p>Click the button below to create a new password:</p>
+
+      <p style="margin: 24px 0;">
+        <a href="${resetLink}" style=" display: inline-block; padding: 12px 20px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">
+          Reset Password
+        </a>
+      </p>
+
+      <p> This link will expire in <strong>${expiresText}</strong> for security reasons.</p>
+      <p> If you did not request a password reset, please ignore this email. Your password will remain unchanged.</p>
+
+      <p>If you need assistance, feel free to contact our support team.</p>
+
+      <p style="margin-top: 32px;"><strong>Best regards,</strong><br />The Support Team</p>
+
+    </div>
+  `,
+  }),
 };
