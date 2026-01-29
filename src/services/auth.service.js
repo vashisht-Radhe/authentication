@@ -12,10 +12,6 @@ export const registerService = async ({
   email,
   password,
 }) => {
-  if (!firstName || !email || !password) {
-    throwError("All fields are required", 400);
-  }
-
   const normalizedEmail = email.trim().toLowerCase();
 
   const existingUser = await User.findOne({ email: normalizedEmail });
@@ -55,20 +51,19 @@ export const registerService = async ({
     expiresIn: JWT_EXPIRE_IN,
   });
 
-  user.password = undefined;
+  // user.password = undefined;
+  const userObject = user.toObject();
+  delete userObject.password;
+  delete userObject.emailOtp;
 
   return {
-    user,
+    user: userObject,
     token,
     otp,
   };
 };
 
 export const loginService = async ({ email, password }) => {
-  if (!email || !password) {
-    throwError("Email and password are required", 400);
-  }
-
   const normalizedEmail = email.trim().toLowerCase();
 
   const user = await User.findOne({ email: normalizedEmail }).select(

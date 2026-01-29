@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from "uuid";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/jpg"];
 
-console.log("Current working dir: ", process.cwd());
 const uploadDir = path.join(process.cwd(), "uploads");
 
 if (!fs.existsSync(uploadDir)) {

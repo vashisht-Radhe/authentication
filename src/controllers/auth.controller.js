@@ -1,8 +1,4 @@
 import User from "../models/user.model.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
-import { JWT_EXPIRE_IN, JWT_SECRET, PORT } from "../config/env.js";
 import { throwError } from "../utils/errorHandler.js";
 import {
   forgetPasswordService,
@@ -19,140 +15,115 @@ import {
   resendEmailOtpService,
   verifyEmailOtpService,
 } from "../services/otp.service.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const register = async (req, res, next) => {
-  try {
-    const { user, token, otp } = await registerService(req.body);
+export const register = asyncHandler(async (req, res, next) => {
+  const { user, token, otp } = await registerService(req.body);
 
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      data: { token, user },
-    });
+  res.status(201).json({
+    success: true,
+    message: "User registered successfully",
+    data: { token, user },
+  });
 
-    const expiresText = "in 10 minutes";
+  const expiresText = "in 10 minutes";
 
-    sendOtp({
-      name: user.firstName,
-      email: user.email,
-      otp,
-      expiresText,
-    }).catch(console.error);
+  sendOtp({
+    name: user.firstName,
+    email: user.email,
+    otp,
+    expiresText,
+  }).catch(console.error);
 
-    sendWelcome({
-      name: user.firstName,
-      email: user.email,
-    }).catch(console.error);
-  } catch (error) {
-    next(error);
-  }
-};
+  sendWelcome({
+    name: user.firstName,
+    email: user.email,
+  }).catch(console.error);
+});
 
-export const verifyEmailOtp = async (req, res, next) => {
-  try {
-    const { otp } = req.body;
-    const { _id: userId } = req.user;
+export const verifyEmailOtp = asyncHandler(async (req, res, next) => {
+  const { otp } = req.body;
+  const { _id: userId } = req.user;
 
-    if (!otp) {
-      throwError("OTP is required", 400);
-    }
+  const user = await User.findById(userId).select("+emailOtp");
 
-    const user = await User.findById(userId);
+  if (!user) throwError("User not found", 404);
 
-    if (!user) throwError("User not found", 404);
+  await verifyEmailOtpService(user, otp);
 
-    await verifyEmailOtpService(user, otp);
+  res.status(200).json({
+    success: true,
+    message: "Email verified successfully",
+  });
+});
 
-    res.status(200).json({
-      success: true,
-      message: "Email verified successfully",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+export const resendOtp = asyncHandler(async (req, res, next) => {
+  const { _id: userId } = req.user;
 
-export const resendOtp = async (req, res, next) => {
-  try {
-    const { _id: userId } = req.user;
+  const user = await User.findById(userId);
 
-    const user = await User.findById(userId);
+  if (!user) throwError("User not found", 404);
 
-    if (!user) throwError("User not found", 404);
+  const { otp } = await resendEmailOtpService(user);
 
-    const { otp } = await resendEmailOtpService(user);
+  const expiresText = "in 10 minutes";
 
-    const expiresText = "in 10 minutes";
+  sendOtp({
+    name: user.firstName,
+    email: user.email,
+    otp,
+    expiresText,
+  }).catch(console.error);
 
-    sendOtp({
-      name: user.firstName,
-      email,
-      otp,
-      expiresText,
-    }).catch(console.error);
+  res.status(200).json({
+    success: true,
+    message: "OTP resent successfully",
+  });
+});
 
-    res.status(200).json({
-      success: true,
-      message: "OTP resent successfully",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+export const login = asyncHandler(async (req, res, next) => {
+  const { user, token } = await loginService(req.body);
 
-export const login = async (req, res, next) => {
-  try {
-    const { user, token } = await loginService(req.body);
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
-    res.status(200).json({
-      success: true,
-      message: "User signed in successfully",
-      data: {
-        token,
-        user: user,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: "User signed in successfully",
+    data: {
+      token,
+      user: user,
+    },
+  });
+});
 
-export const logout = async (req, res, next) => {
-  try {
-    res.status(200).json({
-      success: true,
-      message: "Logged out successfully",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+export const logout = asyncHandler(async (req, res, next) => {
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+});
 
-export const forgetPassword = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    await forgetPasswordService(email);
+export const forgetPassword = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  await forgetPasswordService(email);
 
-    return res.status(200).json({
-      message:
-        "If the email exists, a reset link has been sent (check console)",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  return res.status(200).json({
+    message: "If the email exists, a reset link has been sent (check console)",
+  });
+});
 
-export const resetPassword = async (req, res, next) => {
-  try {
-    const { token, newPassword } = req.body;
+export const resetPassword = asyncHandler(async (req, res, next) => {
+  const { token, newPassword } = req.body;
 
-    await resetPasswordService(token, newPassword);
+  await resetPasswordService(token, newPassword);
 
-    res.status(200).json({
-      success: true,
-      message: "Password reset successfully",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: "Password reset successfully",
+  });
+});

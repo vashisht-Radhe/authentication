@@ -16,21 +16,14 @@ export const getUsersService = async (includeDelete) => {
 };
 
 export const getUserByIdService = async (id) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throwError("Invalid user ID", 400);
-  }
-
   const user = await User.findById(id);
+
   if (!user) throwError("User not found", 404);
 
   return user;
 };
 
 export const updateUserRoleService = async ({ id, role, adminId }) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throwError("Invalid user ID", 400);
-  }
-
   if (!ROLES.includes(role)) {
     throwError("Invalid role value", 400);
   }
@@ -61,10 +54,6 @@ export const updateUserRoleService = async ({ id, role, adminId }) => {
 };
 
 export const deactivateUserService = async ({ id, adminId }) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throwError("Invalid user ID", 400);
-  }
-
   if (adminId.equals(id)) {
     throwError("You cannot deactivate your own account", 403);
   }
@@ -84,10 +73,6 @@ export const deactivateUserService = async ({ id, adminId }) => {
 };
 
 export const reactivateUserService = async (id) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throwError("Invalid user ID", 400);
-  }
-
   const user = await User.findById(id);
 
   if (!user) {
@@ -112,10 +97,6 @@ export const reactivateUserService = async (id) => {
 };
 
 export const deleteUserService = async ({ id, adminId }) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throwError("Invalid user ID", 400);
-  }
-
   if (adminId.equals(id)) {
     throwError("You cannot delete your own account", 403);
   }

@@ -1,42 +1,44 @@
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/env.js";
 import User from "../models/user.model.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const protect = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
+export const protect = asyncHandler(async (req, res, next) => {
+  const token = req.cookies.token;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    req.user = user;
-
-    next();
-  } catch (error) {
-    next(error);
+  if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-};
+
+  let decoded;
+
+  try {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+
+  const user = await User.findById(decoded.userId);
+
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (user.isDeleted) {
+    return res.status(403).json({ message: "Account not accessible" });
+  }
+
+  if (!user.isActive) {
+    return res.status(403).json({ message: "Account not accessible" });
+  }
+
+  req.user = user;
+
+  next();
+});
 
 export const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        message: "Unauthorized",
-      });
-    }
-
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         message: "Forbidden: You do not have permission",

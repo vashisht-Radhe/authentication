@@ -56,6 +56,7 @@ const userSchema = new mongoose.Schema(
     emailOtp: {
       type: String,
       select: false,
+      minLength: [6, "OTP must be exactly 6 digits"],
     },
     emailOtpExpires: Date,
     otpAttempts: {

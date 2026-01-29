@@ -3,10 +3,15 @@ import bcrypt from "bcryptjs";
 import { throwError } from "../utils/errorHandler.js";
 
 export const profileService = async (userId) => {
-  const user = await User.findById(userId);
+  const user = await User.findById(userId).select(
+    "firstName lastName email avatar createdAt",
+  );
 
-  if (!user || user.isDeleted || !user.isActive) {
-    throwError("Account not accessible", 403);
+  // if (!user || user.isDeleted || !user.isActive) {
+  //   throwError("Account not accessible", 403);
+  // }
+  if (!user) {
+    throwError("User not found", 404);
   }
 
   return user;
@@ -15,8 +20,8 @@ export const profileService = async (userId) => {
 export const updateProfileService = async ({ userId, firstName, lastName }) => {
   const user = await User.findById(userId);
 
-  if (!user || user.isDeleted || !user.isActive) {
-    throwError("Account not accessible", 403);
+  if (!user) {
+    throwError("User not found", 404);
   }
 
   if (!firstName && !lastName) {
@@ -38,12 +43,8 @@ export const changePasswordService = async ({
 }) => {
   const user = await User.findById(userId).select("+password");
 
-  if (!user || user.isDeleted || !user.isActive) {
-    throwError("Account not accessible", 403);
-  }
-
-  if (!currentPassword || !newPassword) {
-    throwError("Current password and new password are required", 400);
+  if (!user) {
+    throwError("User not found", 404);
   }
 
   const isPasswordMatch = await bcrypt.compare(currentPassword, user.password);
@@ -80,6 +81,7 @@ export const deactivateAccountService = async (userId) => {
   user.deactivatedAt = new Date();
   user.deactivatedBy = userId;
   user.deactivatedReason = "self";
+  user.tokenVersion += 1;
 
   await user.save();
 

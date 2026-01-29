@@ -33,7 +33,7 @@ export const verifyEmailOtpService = async (user, otp) => {
     .digest("hex");
 
   if (hashedInputOtp !== user.emailOtp) {
-    user.otpAttempts += 1;
+    user.otpAttempts = (user.otpAttempts || 0) + 1;
 
     if (user.otpAttempts >= MAX_OTP_ATTEMPTS) {
       user.otpBlockedUntil = Date.now() + OTP_BLOCK_TIME;
@@ -58,10 +58,7 @@ export const resendEmailOtpService = async (user) => {
     throwError("Email already verified", 400);
   }
 
-  if (
-    user.otpLastSent &&
-    Date.now() - user.otpLastSent < OTP_RESEND_COOLDOWN
-  ) {
+  if (user.otpLastSent && Date.now() - user.otpLastSent < OTP_RESEND_COOLDOWN) {
     throwError("Please wait before requesting another OTP", 429);
   }
 
